@@ -1,0 +1,26 @@
+{
+  "name": "赛博食堂 · 今日吃什么",
+  "short_name": "赛博食堂",
+  "description": "拉杆决定今日菜谱 · AI 推荐美食搭配",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0806",
+  "theme_color": "#0a0806",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["food", "lifestyle", "entertainment"],
+  "lang": "zh-CN"
+}
