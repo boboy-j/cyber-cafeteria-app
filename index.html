@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>今日吃什么 · 赛博食堂</title>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Noto+Sans+SC:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #FFB347;
+  --gold2: #FF8C00;
+  --red: #FF6347;
+  --green: #7FFF00;
+  --bg: #0a0806;
+  --panel: #1a120a;
+  --panel2: #261a0e;
+  --chrome: #b8977a;
+  --chrome2: #d4b89a;
+  --chrome3: #e8d4b8;
+  --neon-red: #ff5533;
+  --neon-yellow: #ffb800;
+  --felt: #1a2a1a;
+  --rivet: #7a6a4a;
+  --text-bright: #fff8e8;
+  --shadow-gold: 0 0 10px #FFB347aa, 0 0 30px #FFB34755;
+  --shadow-red: 0 0 10px #ff5533aa, 0 0 30px #ff553355;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Sans SC', sans-serif;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+  padding: 12px;
+}
+
+.machine-scale {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 820px) {
+  body { padding: 8px; }
+}
+
+/* scanline overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* bg glow */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(120,60,10,0.4) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(90,50,5,0.3) 0%, transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(60,30,10,0.4) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* floating particles */
+body .bg-particles {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.bg-particles span {
+  position: absolute;
+  display: block;
+  width: 4px; height: 4px;
+  background: var(--gold);
+  border-radius: 50%;
+  box-shadow: 0 0 6px 2px var(--gold);
+  opacity: 0;
+  animation: floatUp 8s infinite ease-in;
+}
+.bg-particles span:nth-child(1)  { left: 10%;  animation-delay: 0s;  animation-duration: 9s;  width:3px; height:3px; }
+.bg-particles span:nth-child(2)  { left: 25%;  animation-delay: 1.2s; animation-duration: 11s; width:5px; height:5px; }
+.bg-particles span:nth-child(3)  { left: 40%;  animation-delay: 2.5s; animation-duration: 8s;  width:2px; height:2px; }
+.bg-particles span:nth-child(4)  { left: 55%;  animation-delay: 0.8s; animation-duration: 10s; width:4px; height:4px; }
+.bg-particles span:nth-child(5)  { left: 70%;  animation-delay: 3.2s; animation-duration: 7s;  width:3px; height:3px; }
+.bg-particles span:nth-child(6)  { left: 85%;  animation-delay: 1.8s; animation-duration: 12s; width:5px; height:5px; }
+.bg-particles span:nth-child(7)  { left: 15%;  animation-delay: 4.5s; animation-duration: 9s;  width:2px; height:2px; }
+.bg-particles span:nth-child(8)  { left: 50%;  animation-delay: 5.2s; animation-duration: 8s;  width:4px; height:4px; }
+.bg-particles span:nth-child(9)  { left: 75%;  animation-delay: 3.8s; animation-duration: 10s; width:3px; height:3px; }
+.bg-particles span:nth-child(10) { left: 90%;  animation-delay: 6.0s; animation-duration: 7s;  width:2px; height:2px; }
+
+@keyframes floatUp {
+  0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+}
+
+/* bottom footer */
+.page-footer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  background: linear-gradient(0deg, rgba(10,8,6,0.95) 0%, transparent 100%);
+  padding: 40px 20px 12px;
+  text-align: center;
+  pointer-events: none;
+}
+.page-footer .footer-line {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: rgba(255,255,255,0.15);
+  text-transform: uppercase;
+  display: block;
+  line-height: 1.8;
+}
+
+@media (max-width: 480px) {
+  .page-footer { padding: 30px 16px 10px; }
+  .page-footer .footer-line { font-size: 8px; letter-spacing: 0.2em; }
+}
+
+/* ── MACHINE BODY ── */
+.machine {
+  position: relative;
+  z-index: 10;
+  width: 580px;
+  max-width: 100%;
+  background: linear-gradient(170deg, #2a1a10 0%, #1a100a 40%, #140c08 100%);
+  border-radius: 28px 28px 16px 16px;
+  border: 3px solid var(--chrome);
+  box-shadow:
+    0 0 0 1px #3a2a1a,
+    inset 0 1px 0 var(--chrome3),
+    inset 0 -2px 0 #3a2820,
+    0 30px 80px rgba(0,0,0,0.9),
+    0 0 60px rgba(255,150,50,0.08);
+  padding: 0 0 28px;
+}
+
+.machine-top {
+  background: linear-gradient(180deg, #d4b896 0%, #8a7050 30%, #6a5035 60%, #8a7050 100%);
+  border-radius: 26px 26px 0 0;
+  padding: 18px 24px 14px;
+  border-bottom: 2px solid #3a2820;
+  position: relative;
+  overflow: hidden;
+}
+.machine-top::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%, rgba(255,255,255,0.15) 20%,
+    transparent 40%, rgba(255,255,255,0.1) 60%,
+    transparent 80%, rgba(255,255,255,0.08) 100%);
+}
+
+/* ── TITLE ── */
+.title-board {
+  background: #0a0404;
+  border: 2px solid #4a3020;
+  border-radius: 8px;
+  padding: 10px 16px 8px;
+  text-align: center;
+  overflow: hidden;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.8), 0 0 20px rgba(255,150,50,0.2);
+  position: relative;
+}
+
+.title-zh {
+  font-family: 'Boogaloo', cursive;
+  font-size: 13px;
+  letter-spacing: 0.25em;
+  color: var(--chrome2);
+  display: block;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.title-main {
+  font-family: 'Boogaloo', cursive;
+  font-size: 26px;
+  letter-spacing: 0.08em;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 8px #FFB800cc, 0 0 20px #FFB80066, 0 0 40px #FFB80033;
+  display: block;
+  animation: flicker 8s infinite;
+}
+
+@keyframes flicker {
+  0%,96%,100% { opacity:1; }
+  97% { opacity:0.7; }
+  98% { opacity:1; }
+  99% { opacity:0.5; }
+}
+
+.title-sub {
+  font-size: 10px;
+  color: #6a5040;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-top: 3px;
+  display: block;
+}
+
+/* ── LIGHT STRIP ── */
+.light-strip {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0 6px;
+}
+.bulb {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #2a1a10;
+  border: 1px solid #4a3020;
+  transition: all 0.1s;
+}
+.bulb.on-r { background: #ff5533; box-shadow: 0 0 6px #ff5533, 0 0 12px #ff5533; }
+.bulb.on-y { background: #ffb800; box-shadow: 0 0 6px #ffb800, 0 0 12px #ffb800; }
+.bulb.on-g { background: #7fff00; box-shadow: 0 0 6px #7fff00, 0 0 12px #7fff00; }
+
+/* ── SLOT WINDOW ── */
+.slot-outer {
+  margin: 0 20px;
+  background: #0a0404;
+  border-radius: 14px;
+  border: 3px solid #3a2418;
+  box-shadow:
+    inset 0 4px 20px rgba(0,0,0,0.9),
+    inset 0 0 40px rgba(0,0,0,0.5),
+    0 0 0 1px #5a3a28;
+  padding: 4px;
+  position: relative;
+}
+
+.slot-inner {
+  background: linear-gradient(180deg, #0d0808 0%, #080404 100%);
+  border-radius: 10px;
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.slot-inner::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(20,40,20,0.05) 10px, rgba(20,40,20,0.05) 20px);
+  pointer-events: none;
+}
+
+/* ── REEL ── */
+.reel-wrap {
+  flex: 1;
+  background: linear-gradient(180deg, #181010 0%, #0c0808 100%);
+  border-radius: 8px;
+  border: 2px solid #2a1810;
+  overflow: hidden;
+  position: relative;
+  aspect-ratio: 0.94;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);
+}
+
+.reel-wrap::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.06) 0%,
+    transparent 20%,
+    transparent 80%,
+    rgba(0,0,0,0.3) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.reel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+  transition: transform 0s;
+  position: relative;
+  z-index: 1;
+}
+
+.reel-item {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+  line-height: 1;
+  flex-shrink: 0;
+  user-select: none;
+  position: relative;
+}
+.reel-item span {
+  line-height: 1;
+  display: block;
+}
+
+/* center line */
+.reel-wrap::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 2px;
+  transform: translateY(-50%);
+  background: rgba(255,180,50,0.15);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* payline */
+.payline {
+  position: absolute;
+  top: 50%; left: -4px; right: -4px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,180,50,0.6), rgba(255,180,50,0.9), rgba(255,180,50,0.6), transparent);
+  box-shadow: 0 0 8px rgba(255,180,50,0.5);
+  z-index: 10;
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* ── RESULT DISPLAY ── */
+.result-board {
+  margin: 12px 20px 0;
+  background: #060303;
+  border: 2px solid #2a1810;
+  border-radius: 10px;
+  padding: 14px 18px;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+.result-board::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,150,50,0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.result-idle {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: #3a2818;
+  letter-spacing: 0.2em;
+  text-align: center;
+  line-height: 2;
+}
+
+.result-level {
+  font-family: 'Boogaloo', cursive;
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.result-text {
+  font-size: 14px;
+  color: var(--text-bright);
+  text-align: center;
+  line-height: 1.6;
+  font-weight: 700;
+  transition: all 0.3s;
+}
+
+.result-tip {
+  font-size: 11px;
+  color: #8a7060;
+  text-align: center;
+  margin-top: 8px;
+  font-style: italic;
+  line-height: 1.5;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* ── MID PANEL ── */
+.mid-panel {
+  margin: 14px 20px 0;
+  background: linear-gradient(180deg, #2a1a10 0%, #1e1208 100%);
+  border: 2px solid #3a2418;
+  border-radius: 10px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.credit-display {
+  background: #060303;
+  border: 2px solid #2a1810;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #6a5040;
+  letter-spacing: 0.15em;
+  line-height: 1.6;
+  min-width: 90px;
+}
+.credit-val {
+  font-size: 18px;
+  color: var(--green);
+  text-shadow: 0 0 8px var(--green);
+  display: block;
+  font-weight: 700;
+}
+
+/* ── LEVER ── */
+.lever-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.lever-label {
+  font-size: 9px;
+  color: #4a3828;
+  letter-spacing: 0.2em;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.lever-track {
+  width: 14px;
+  height: 60px;
+  background: linear-gradient(90deg, #1a0f08 0%, #2a1a10 50%, #1a0f08 100%);
+  border-radius: 7px;
+  border: 1px solid #3a2818;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 4px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+}
+
+.lever-knob {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--chrome3), var(--chrome) 50%, #4a3020 100%);
+  border: 2px solid var(--chrome2);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+  cursor: pointer;
+  position: absolute;
+  top: 4px;
+  transition: top 0.15s ease;
+  z-index: 2;
+}
+.lever-knob:hover { filter: brightness(1.15); }
+.lever-knob.pulled { top: 34px; }
+.lever-knob.spin-active { animation: leverReturn 0.4s ease 0.15s forwards; top: 34px; }
+
+@keyframes leverReturn {
+  0% { top: 34px; }
+  60% { top: 0px; }
+  80% { top: 8px; }
+  100% { top: 4px; }
+}
+
+/* ── SPIN BUTTON ── */
+.spin-btn {
+  background: radial-gradient(circle at 40% 35%, #ff8844, #ee5500 60%, #aa3300 100%);
+  border: 3px solid #ff7733;
+  border-bottom: 5px solid #662200;
+  border-radius: 50%;
+  width: 64px; height: 64px;
+  font-family: 'Boogaloo', cursive;
+  font-size: 11px;
+  color: #fff;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.1s;
+  box-shadow:
+    0 4px 0 #442200,
+    0 0 20px rgba(255,120,40,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  gap: 1px;
+  position: relative;
+  user-select: none;
+}
+.spin-btn:hover {
+  box-shadow: 0 4px 0 #442200, 0 0 30px rgba(255,120,40,0.7), inset 0 1px 0 rgba(255,255,255,0.3);
+  filter: brightness(1.1);
+}
+.spin-btn:active, .spin-btn.pressed {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #442200, 0 0 15px rgba(255,120,40,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+  border-bottom: 3px solid #662200;
+}
+.spin-btn:disabled {
+  opacity: 0.5; cursor: not-allowed; filter: none;
+}
+.spin-btn .btn-icon { font-size: 22px; line-height: 1; }
+.spin-btn .btn-text { font-size: 10px; letter-spacing: 0.08em; }
+
+/* ── BOTTOM CHROME ── */
+.bottom-chrome {
+  margin: 14px 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.rivet-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.rivet {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--chrome2), var(--rivet) 70%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 2px rgba(0,0,0,0.4);
+}
+
+.model-plate {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: #3a2818;
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+/* ── WIN FLASH ── */
+@keyframes winFlash {
+  0%,100% { box-shadow: inset 0 2px 10px rgba(0,0,0,0.8); background: #060303; }
+  50% { box-shadow: inset 0 2px 10px rgba(0,0,0,0.4), 0 0 30px rgba(255,180,50,0.6); background: #0a0603; }
+}
+.result-board.winning { animation: winFlash 0.4s ease 3; }
+
+@keyframes jackpotText {
+  0%,100% { text-shadow: 0 0 8px currentColor; }
+  50% { text-shadow: 0 0 20px currentColor, 0 0 40px currentColor; }
+}
+.result-level.glow { animation: jackpotText 0.5s ease infinite; }
+
+/* ── COIN BURST ── */
+.coin {
+  position: fixed;
+  font-size: 24px;
+  pointer-events: none;
+  z-index: 999;
+  animation: coinFly var(--dur, 1.2s) ease-out forwards;
+}
+@keyframes coinFly {
+  0% { transform: translate(0,0) rotate(0deg) scale(1); opacity:1; }
+  100% { transform: translate(var(--tx,0px), var(--ty,-200px)) rotate(var(--rot,360deg)) scale(0.3); opacity:0; }
+}
+
+/* ── REEL SPIN BLUR ── */
+.reel-wrap.spinning .reel-item {
+  filter: blur(2px);
+}
+.reel-wrap.stopping .reel-item {
+  filter: blur(0);
+  transition: filter 0.2s;
+}
+
+/* ── RESPONSIVE: TABLET ── */
+@media (max-width: 820px) {
+  .machine {
+    width: 100%;
+    max-width: 480px;
+    border-radius: 24px 24px 14px 14px;
+  }
+  .machine-top { padding: 14px 18px 12px; }
+  .title-main { font-size: 22px; }
+}
+
+/* ── RESPONSIVE: PHONE ── */
+@media (max-width: 480px) {
+  body { padding: 6px; }
+
+  .machine {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 16px 16px 10px 10px;
+    padding: 0 0 16px;
+    border-width: 2px;
+  }
+
+  .machine-top {
+    padding: 10px 12px 8px;
+    border-radius: 14px 14px 0 0;
+  }
+  .title-board { padding: 6px 8px 5px; }
+  .title-zh { font-size: 9px; }
+  .title-main { font-size: 18px; }
+  .title-sub { font-size: 7px; letter-spacing: 0.15em; }
+
+  .light-strip { gap: 4px; padding: 5px 0 3px; }
+  .bulb { width: 7px; height: 7px; }
+
+  .slot-outer { margin: 0 8px; border-radius: 8px; padding: 2px; }
+  .slot-inner { gap: 2px; padding: 4px; border-radius: 6px; }
+  .reel-item { font-size: 34px; }
+
+  .result-board {
+    margin: 8px 8px 0;
+    padding: 8px 10px;
+    min-height: 60px;
+  }
+  .result-idle { font-size: 10px; line-height: 1.6; }
+  .result-level { font-size: 14px; }
+  .result-text { font-size: 12px; }
+  .result-tip { font-size: 9px; }
+
+  .mid-panel {
+    margin: 8px 8px 0;
+    padding: 6px 8px;
+    gap: 4px;
+  }
+  .credit-display {
+    font-size: 8px;
+    padding: 3px 6px;
+    min-width: 60px;
+  }
+  .credit-val { font-size: 14px; }
+
+  .lever-track { width: 10px; height: 42px; }
+  .lever-knob { width: 20px; height: 20px; top: 2px; }
+  .lever-knob.pulled { top: 24px; }
+  @keyframes leverReturn {
+    0% { top: 24px; }
+    60% { top: 0px; }
+    80% { top: 5px; }
+    100% { top: 2px; }
+  }
+  .lever-label { font-size: 7px; }
+
+  .spin-btn { width: 46px; height: 46px; font-size: 8px; border-bottom-width: 4px; }
+  .spin-btn:active, .spin-btn.pressed { transform: translateY(2px); }
+  .spin-btn .btn-icon { font-size: 16px; }
+  .spin-btn .btn-text { font-size: 7px; }
+
+  .mid-panel > div[style*="gap:16px"] { gap: 10px !important; }
+
+  .bottom-chrome { margin: 8px 8px 0; gap: 4px; }
+  .model-plate { font-size: 7px; letter-spacing: 0.1em; }
+  .rivet { width: 5px; height: 5px; }
+  .rivet-row { gap: 3px; }
+}
+
+/* ── VERY SMALL SCREENS ── */
+@media (max-width: 375px) {
+  .machine-top { padding: 8px 8px 6px; }
+  .title-main { font-size: 16px; }
+  .title-zh { font-size: 8px; }
+
+  .reel-item { font-size: 28px; }
+
+  .result-board { min-height: 52px; padding: 6px 8px; }
+  .result-text { font-size: 11px; }
+  .result-level { font-size: 12px; }
+
+  .mid-panel { padding: 4px 6px; }
+  .credit-display { font-size: 7px; min-width: 50px; padding: 2px 5px; }
+  .credit-val { font-size: 12px; }
+
+  .spin-btn { width: 40px; height: 40px; }
+  .spin-btn .btn-icon { font-size: 14px; }
+  .spin-btn .btn-text { font-size: 6px; }
+
+  .slot-outer { margin: 0 5px; }
+  .result-board { margin-left: 5px; margin-right: 5px; }
+  .mid-panel { margin-left: 5px; margin-right: 5px; }
+  .bottom-chrome { margin-left: 5px; margin-right: 5px; }
+}
+
+/* ── RESULT COLORS ── */
+.level-special   { color: #FFD700; text-shadow: 0 0 12px #FFD700, 0 0 24px #FFD70088; }
+.level-rice      { color: #ffdd88; text-shadow: 0 0 12px #ffdd88; }
+.level-noodle    { color: #ffaa44; text-shadow: 0 0 12px #ffaa44; }
+.level-western   { color: #ff6644; text-shadow: 0 0 12px #ff6644; }
+.level-asian     { color: #44ff88; text-shadow: 0 0 12px #44ff88; }
+.level-japanese  { color: #ff88cc; text-shadow: 0 0 12px #ff88cc; }
+.level-fusion    { color: #aa88ff; text-shadow: 0 0 12px #aa88ff; }
+.level-light     { color: #88ffbb; text-shadow: 0 0 12px #88ffbb; }
+.level-heavy     { color: #ff8844; text-shadow: 0 0 12px #ff8844; }
+
+/* ── SETTINGS BUTTON ── */
+.btn-settings {
+  position: fixed;
+  top: 12px; right: 12px;
+  z-index: 100;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid #4a3020;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s;
+  color: var(--chrome2);
+}
+.btn-settings:hover { background: rgba(80,50,30,0.7); }
+
+/* ── SETTINGS MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.modal-content {
+  background: linear-gradient(170deg, #2a1810, #1a0f0a);
+  border: 2px solid var(--chrome);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid #3a2418;
+}
+.modal-header h3 {
+  font-family: 'Boogaloo', cursive;
+  font-size: 16px;
+  color: var(--neon-yellow);
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+.modal-close {
+  background: none; border: none;
+  font-size: 24px; color: var(--chrome);
+  cursor: pointer; padding: 0 4px;
+  line-height: 1;
+}
+.modal-close:hover { color: var(--chrome2); }
+.modal-body { padding: 16px 20px; }
+.form-group { margin-bottom: 14px; }
+.form-group label {
+  display: block;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--chrome);
+  letter-spacing: 0.15em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.form-group select,
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #0a0404;
+  border: 1px solid #3a2418;
+  border-radius: 8px;
+  color: #fff8e8;
+  font-size: 14px;
+  font-family: 'Noto Sans SC', sans-serif;
+  outline: none;
+  transition: border-color .2s;
+}
+.form-group select:focus,
+.form-group input:focus { border-color: var(--chrome2); }
+.form-group select option { background: #1a0f0a; color: #fff; }
+.form-group input::placeholder { color: #5a3a28; }
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 12px 20px 18px;
+  border-top: 1px solid #3a2418;
+  flex-wrap: wrap;
+}
+.modal-footer .test-result {
+  width: 100%;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #0a0404;
+  display: none;
+  font-family: 'Share Tech Mono', monospace;
+}
+.modal-footer .test-result.show { display: block; }
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-ghost {
+  background: #2a1810;
+  color: var(--chrome2);
+  border: 1px solid #3a2418;
+}
+.btn-ghost:hover { background: #3a2418; }
+.btn-main {
+  flex: 1;
+  background: linear-gradient(135deg, #ff8844, #ee5500);
+  color: #fff;
+  border-bottom: 2px solid #662200;
+}
+.btn-main:hover { filter: brightness(1.1); }
+.btn-main:active { transform: translateY(1px); }
+
+</style>
+</head>
+<body>
+
+<div class="machine-scale">
+<div class="machine">
+
+  <!-- TOP CHROME -->
+  <div class="machine-top">
+    <div class="title-board">
+      <span class="title-zh">CYBER CAFETERIA · MODEL 2025</span>
+      <span class="title-main">🍽️ 今日吃什么 · 赛博食堂</span>
+      <span class="title-sub">PULL LEVER · KNOW YOUR MEAL · EAT HAPPY</span>
+    </div>
+  </div>
+
+  <!-- LIGHT STRIP -->
+  <div class="light-strip" id="lightStrip">
+    <div class="bulb" data-c="r"></div><div class="bulb" data-c="y"></div>
+    <div class="bulb" data-c="g"></div><div class="bulb" data-c="r"></div>
+    <div class="bulb" data-c="y"></div><div class="bulb" data-c="g"></div>
+    <div class="bulb" data-c="r"></div><div class="bulb" data-c="y"></div>
+    <div class="bulb" data-c="g"></div><div class="bulb" data-c="r"></div>
+    <div class="bulb" data-c="y"></div><div class="bulb" data-c="g"></div>
+    <div class="bulb" data-c="r"></div><div class="bulb" data-c="y"></div>
+    <div class="bulb" data-c="g"></div>
+  </div>
+
+  <!-- SLOT REELS -->
+  <div class="slot-outer">
+    <div class="payline"></div>
+    <div class="slot-inner">
+      <div class="reel-wrap" id="reel0"><div class="reel" id="r0"></div></div>
+      <div class="reel-wrap" id="reel1"><div class="reel" id="r1"></div></div>
+      <div class="reel-wrap" id="reel2"><div class="reel" id="r2"></div></div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-board" id="resultBoard">
+    <div class="result-idle" id="resultIdle">
+      ▸ PULL LEVER OR PRESS SPIN<br>
+      ▸ 拉下拉杆 / 按下转盘<br>
+      ▸ 看看今天吃啥
+    </div>
+    <div id="resultContent" style="display:none; width:100%; text-align:center;">
+      <div class="result-level" id="resultLevel"></div>
+      <div class="result-text" id="resultText"></div>
+      <div class="result-tip" id="resultTip"></div>
+    </div>
+  </div>
+
+  <!-- MID PANEL -->
+  <div class="mid-panel">
+    <div class="credit-display">
+      <span style="font-size:9px;letter-spacing:.2em">DISHES TODAY</span>
+      <span class="credit-val" id="creditVal">00</span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="lever-area">
+        <div class="lever-label">LEVER</div>
+        <div class="lever-track">
+          <div class="lever-knob" id="leverKnob" onclick="handleSpin()"></div>
+        </div>
+      </div>
+
+      <button class="spin-btn" id="spinBtn" onclick="handleSpin()">
+        <span class="btn-icon">🍳</span>
+        <span class="btn-text">COOK</span>
+      </button>
+    </div>
+
+    <div class="credit-display" style="text-align:right">
+      <span style="font-size:9px;letter-spacing:.2em">SPECIALS</span>
+      <span class="credit-val" id="winVal" style="color:#FFD700;text-shadow:0 0 8px #FFD700;">00</span>
+    </div>
+  </div>
+
+  <!-- BOTTOM CHROME -->
+  <div class="bottom-chrome">
+    <div class="rivet-row">
+      <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    </div>
+    <div class="model-plate">© CYBER-CAFETERIA™ · DAILY SPECIAL · FRESH & HOT</div>
+    <div class="rivet-row">
+      <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ⚙️ 设置按钮 -->
+<button class="btn-settings" id="settingsBtn" onclick="openSettings()" title="配置大模型">⚙️</button>
+
+<!-- ⚙️ 大模型配置弹窗 -->
+<div class="modal-overlay" id="settingsModal" style="display:none" onclick="closeSettings(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3>⚙️ 大模型配置</h3>
+      <button class="modal-close" onclick="closeSettings()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>服务商</label>
+        <select id="selProvider"></select>
+      </div>
+      <div class="form-group">
+        <label>BASE URL</label>
+        <input type="text" id="inputBaseUrl" placeholder="https://api.example.com/v1">
+      </div>
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="password" id="inputApiKey" placeholder="sk-...">
+      </div>
+      <div class="form-group">
+        <label>模型名称</label>
+        <input type="text" id="inputModel" placeholder="gpt-4o-mini">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="test-result" id="testResult"></div>
+      <button class="btn btn-ghost" onclick="testConnection()">🧪 测试连接</button>
+      <button class="btn btn-main" onclick="saveSettings()">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══ SYMBOLS ══ */
+const REELS = [
+  // 主食
+  ['🍚','🍜','🍕','🌮','🍔','🥟','🍣','🥘','🥟','🫓'],
+  // 配菜
+  ['🥗','🧆','🥦','🍟','🌽','🥩','🧀','🥚','🌰','🥕'],
+  // 酱料/做法
+  ['🌶️','🧄','🍯','🍋','🥜','🧈','🔥','🌊','🧊','🍳'],
+];
+
+/* ══ OUTCOMES ══ */
+const STAPLE_VIBE = {
+  '🍚': 'rice',  '🍜': 'noodle', '🍕': 'western', '🌮': 'western',
+  '🍔': 'western', '🥟': 'chinese', '🍣': 'japanese', '🥘': 'western',
+  '🫓': 'chinese',
+};
+const SIDE_VIBE = {
+  '🥗': 'fresh', '🧆': 'protein', '🥦': 'healthy', '🍟': 'indulgent',
+  '🌽': 'sweet', '🥩': 'protein', '🧀': 'indulgent', '🥚': 'protein',
+  '🌰': 'crunchy', '🥕': 'healthy',
+};
+const SAUCE_VIBE = {
+  '🌶️': 'spicy', '🧄': 'savory', '🍯': 'sweet', '🍋': 'sour',
+  '🥜': 'nutty', '🧈': 'buttery', '🔥': 'spicy', '🌊': 'light',
+  '🧊': 'cold', '🍳': 'savory',
+};
+
+const RESULTS = {
+  special: {
+    level: '🎉 今日特选 · 天选之餐',
+    levelClass: 'level-special',
+    texts: [
+      '三星连珠！今天就是吃这道菜的命！',
+      '命运让你选这道——别犹豫，去吃！',
+      '宇宙在对你喊话：就是它了！',
+    ],
+    tips: [
+      '> 建议立刻下单，今天吃啥都是满分体验。',
+      '> 今日份的碳水自由已解锁，尽情享用。',
+      '> 温馨提示：别问为什么，吃就对了。',
+    ],
+    win: true,
+  },
+  rice_meal: {
+    level: '🍚 碳水满足 · 干饭日',
+    levelClass: 'level-rice',
+    texts: [
+      '今日推荐：一碗热腾腾的米饭，配家常小炒。',
+      '干饭人干饭魂！今天的主角是那一碗白米饭。',
+      '没有什么是一碗米饭解决不了的，如果有，就两碗。',
+    ],
+    tips: [
+      '> 建议搭配一个下饭菜，比如麻婆豆腐或番茄炒蛋。',
+      '> 今天适合盖浇饭，简单又满足。',
+      '> 碳水就是力量，干饭就完事了。',
+    ],
+    win: false,
+  },
+  noodle_meal: {
+    level: '🍜 嗦面快乐 · 汤面日',
+    levelClass: 'level-noodle',
+    texts: [
+      '今日推荐：一碗热汤面，暖胃又暖心。',
+      '没有什么是一碗面解决不了的。',
+      '嗦面的快乐，懂的都懂。',
+    ],
+    tips: [
+      '> 建议加个溏心蛋，完美。',
+      '> 汤面配小菜，快乐翻倍。',
+      '> 面要趁热吃，凉了就坨了。',
+    ],
+    win: false,
+  },
+  western_meal: {
+    level: '🍕 西式放纵 · 异国风情',
+    levelClass: 'level-western',
+    texts: [
+      '今日推荐：来点西式的，换换口味。',
+      '异国风味在召唤，今天不做亚洲胃。',
+      '芝士就是力量，今天热量不设限。',
+    ],
+    tips: [
+      '> 披萨配可乐，快乐加倍。',
+      '> 今天适合约朋友一起吃，分享更香。',
+      '> 汉堡要大口咬，不要优雅。',
+    ],
+    win: false,
+  },
+  asian_meal: {
+    level: '🥟 中式暖胃 · 家常味道',
+    levelClass: 'level-asian',
+    texts: [
+      '今日推荐：来点中式的，家的味道。',
+      '中式料理，永远吃不腻的选择。',
+      '今天适合吃饺子，像妈妈做的那种。',
+    ],
+    tips: [
+      '> 蘸醋加蒜，饺子灵魂。',
+      '> 配一碗紫菜蛋花汤，完美收尾。',
+      '> 今天适合做点费功夫的菜，犒劳自己。',
+    ],
+    win: false,
+  },
+  japanese_meal: {
+    level: '🍣 日式精致 · 清爽一餐',
+    levelClass: 'level-japanese',
+    texts: [
+      '今日推荐：日式料理，精致又清爽。',
+      '细腻的日式风味，今天做个讲究人。',
+      '寿司也好，拉面也罢，日料从不让人失望。',
+    ],
+    tips: [
+      '> 刺身要配芥末和酱油，比例自己调。',
+      '> 吃完来杯抹茶，解腻又舒坦。',
+      '> 今天适合慢慢吃，感受食材本味。',
+    ],
+    win: false,
+  },
+  fusion_meal: {
+    level: '🔀 混搭创意 · 意外之喜',
+    levelClass: 'level-fusion',
+    texts: [
+      '今日推荐：打破边界，来点混搭。',
+      '东西合璧，今天不走寻常路。',
+      '创意料理的精髓：好吃就行，管它什么派系。',
+    ],
+    tips: [
+      '> 试试中餐西做，或者西餐中吃，惊喜不断。',
+      '> 今天适合打开美食软件，选评分最高的创意菜。',
+      '> 不建议喝奶茶——除非你铁了心要胖。',
+    ],
+    win: false,
+  },
+  light_meal: {
+    level: '🥗 清淡健康 · 轻食日',
+    levelClass: 'level-light',
+    texts: [
+      '今日推荐：清清淡淡，给肠胃放个假。',
+      '轻食日，吃草也可以很快乐。',
+      '今天适合吃沙拉，顺便减减昨天的罪恶感。',
+    ],
+    tips: [
+      '> 沙拉酱少放，油醋汁是更好的选择。',
+      '> 可以加鸡胸肉或虾，补充蛋白质。',
+      '> 吃完再来杯温水，身心舒畅。',
+    ],
+    win: false,
+  },
+  heavy_meal: {
+    level: '🍔 热量炸弹 · 放纵日',
+    levelClass: 'level-heavy',
+    texts: [
+      '今日推荐：热量拉满，快乐加倍！',
+      '今天不减肥，今天就放纵。',
+      '热量炸弹日：吃就完事了，明天再说。',
+    ],
+    tips: [
+      '> 建议搭配冰可乐，解腻又爽。',
+      '> 今天适合吃炸鸡，皮要脆，肉要嫩。',
+      '> 温馨提示：明天记得多喝热水。',
+    ],
+    win: false,
+  },
+};
+
+/* ══ AUDIO ENGINE ══ */
+let audioCtx = null;
+
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function sfxLever() {
+  const ctx = getAudio();
+  const t = ctx.currentTime;
+  const buf = ctx.createBuffer(1, ctx.sampleRate * 0.08, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 3);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.6, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 800;
+  filter.Q.value = 0.8;
+  src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+  src.start(t);
+
+  const osc = ctx.createOscillator();
+  const og = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(300, t + 0.02);
+  osc.frequency.exponentialRampToValueAtTime(80, t + 0.18);
+  og.gain.setValueAtTime(0.15, t + 0.02);
+  og.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  const flt = ctx.createBiquadFilter();
+  flt.type = 'lowpass'; flt.frequency.value = 400;
+  osc.connect(flt); flt.connect(og); og.connect(ctx.destination);
+  osc.start(t + 0.02); osc.stop(t + 0.2);
+}
+
+function sfxLeverReturn() {
+  const ctx = getAudio();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const og = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(120, t);
+  osc.frequency.exponentialRampToValueAtTime(380, t + 0.12);
+  osc.frequency.exponentialRampToValueAtTime(200, t + 0.22);
+  og.gain.setValueAtTime(0.18, t);
+  og.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  osc.connect(og); og.connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.25);
+}
+
+let reelNoiseNode = null;
+let reelNoiseGain = null;
+function sfxReelStart() {
+  const ctx = getAudio();
+  const t = ctx.currentTime;
+  const bufSize = ctx.sampleRate * 2;
+  const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+
+  reelNoiseNode = ctx.createBufferSource();
+  reelNoiseNode.buffer = buf;
+  reelNoiseNode.loop = true;
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 180;
+  filter.Q.value = 1.5;
+
+  reelNoiseGain = ctx.createGain();
+  reelNoiseGain.gain.setValueAtTime(0.0, t);
+  reelNoiseGain.gain.linearRampToValueAtTime(0.18, t + 0.15);
+
+  reelNoiseNode.connect(filter);
+  filter.connect(reelNoiseGain);
+  reelNoiseGain.connect(ctx.destination);
+  reelNoiseNode.start(t);
+
+  sfxReelTick();
+}
+
+let tickInterval = null;
+function sfxReelTick() {
+  let tickSpeed = 60;
+  let elapsed = 0;
+  tickInterval = setInterval(() => {
+    elapsed += tickSpeed;
+    const ctx = getAudio();
+    const t = ctx.currentTime;
+    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.012), ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * (1 - i/d.length);
+    const s = ctx.createBufferSource();
+    s.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.07, t);
+    const f = ctx.createBiquadFilter();
+    f.type = 'highpass'; f.frequency.value = 1200;
+    s.connect(f); f.connect(g); g.connect(ctx.destination);
+    s.start(t);
+    if (elapsed > 800) tickSpeed = 120;
+    if (elapsed > 1400) tickSpeed = 180;
+  }, tickSpeed);
+}
+
+function sfxReelStop() {
+  if (reelNoiseGain && audioCtx) {
+    const t = audioCtx.currentTime;
+    reelNoiseGain.gain.linearRampToValueAtTime(0.0, t + 0.12);
+    setTimeout(() => { try { reelNoiseNode && reelNoiseNode.stop(); } catch(e){} }, 200);
+  }
+  if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+}
+
+function sfxReelLock(reelIndex) {
+  const ctx = getAudio();
+  const t = ctx.currentTime;
+  const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.06), ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = (Math.random()*2-1) * Math.pow(1 - i/data.length, 2);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const gain = ctx.createGain();
+  const pitch = [900, 750, 600][reelIndex];
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = pitch;
+  filter.Q.value = 2;
+  gain.gain.setValueAtTime(0.5, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+  src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+  src.start(t);
+
+  const osc = ctx.createOscillator();
+  const og = ctx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = [660, 550, 440][reelIndex];
+  og.gain.setValueAtTime(0.12, t);
+  og.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  osc.connect(og); og.connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.15);
+}
+
+function sfxResultNormal() {
+  const ctx = getAudio();
+  const t = ctx.currentTime;
+  [220, 196, 165].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.12, t + i * 0.1);
+    g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.3);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t + i * 0.1); osc.stop(t + i * 0.1 + 0.3);
+  });
+}
+
+function sfxJackpot() {
+  const ctx = getAudio();
+  const t = ctx.currentTime;
+  const melody = [523,659,784,1047,784,1047,1319,1047,1319,1568];
+  melody.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = i % 2 === 0 ? 'square' : 'triangle';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.0, t + i*0.1);
+    g.gain.linearRampToValueAtTime(0.18, t + i*0.1 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + i*0.1 + 0.15);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t + i*0.1); osc.stop(t + i*0.1 + 0.18);
+  });
+  for (let i = 0; i < 12; i++) {
+    setTimeout(() => {
+      const c = ctx.createOscillator();
+      const cg = ctx.createGain();
+      c.type = 'sine';
+      c.frequency.value = 800 + Math.random() * 600;
+      const ct = ctx.currentTime;
+      cg.gain.setValueAtTime(0.08, ct);
+      cg.gain.exponentialRampToValueAtTime(0.001, ct + 0.1);
+      c.connect(cg); cg.connect(ctx.destination);
+      c.start(ct); c.stop(ct + 0.1);
+    }, i * 80 + 600);
+  }
+}
+
+/* ══ PROVIDERS ══ */
+const PROVIDERS = [
+  { id:'openai',    name:'OpenAI',     icon:'🤖', defaultBase:'https://api.openai.com/v1',        defaultModel:'gpt-4o-mini',          keyHint:'sk-... 格式' },
+  { id:'deepseek',  name:'DeepSeek',   icon:'🔍', defaultBase:'https://api.deepseek.com/v1',       defaultModel:'deepseek-chat',         keyHint:'sk-... 格式' },
+  { id:'qwen',      name:'通义千问',   icon:'🌟', defaultBase:'https://dashscope.aliyuncs.com/compatible-mode/v1', defaultModel:'qwen-turbo', keyHint:'sk-... 格式' },
+  { id:'zhipu',     name:'智谱 GLM',   icon:'💡', defaultBase:'https://open.bigmodel.cn/api/paas/v4', defaultModel:'glm-4-flash',        keyHint:'API Key 格式' },
+  { id:'moonshot',  name:'月之暗面',   icon:'🌙', defaultBase:'https://api.moonshot.cn/v1',        defaultModel:'moonshot-v1-8k',        keyHint:'sk-... 格式' },
+  { id:'siliconflow', name:'硅基流动', icon:'🌊', defaultBase:'https://api.siliconflow.cn/v1', defaultModel:'deepseek-ai/DeepSeek-V3-0324', keyHint:'sk-... 格式' },
+  { id:'custom',    name:'自定义',     icon:'🔧', defaultBase:'',                                  defaultModel:'',                      keyHint:'请填写 Base URL 和模型名' },
+];
+
+/* ══ DEFAULT CONFIG ══ */
+const HARDCODED_CONFIG = {
+  provider:  'siliconflow',
+  apiKey:    '',
+  baseUrl:   '',
+  modelName: '',
+};
+
+const STORE_KEY = 'cyberCafeteria_config';
+
+/* ══ CONFIG HELPERS ══ */
+function loadConfig() {
+  try {
+    const saved = localStorage.getItem(STORE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...HARDCODED_CONFIG, ...parsed };
+    }
+  } catch(e) {}
+  return { ...HARDCODED_CONFIG };
+}
+
+function openSettings() {
+  const cfg = loadConfig();
+  const sel = document.getElementById('selProvider');
+  sel.innerHTML = '';
+  PROVIDERS.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.icon} ${p.name}`;
+    sel.appendChild(opt);
+  });
+  sel.value = cfg.provider;
+  document.getElementById('inputBaseUrl').value = cfg.baseUrl || '';
+  document.getElementById('inputApiKey').value = cfg.apiKey || '';
+  document.getElementById('inputModel').value = cfg.modelName || '';
+  document.getElementById('testResult').className = 'test-result';
+  document.getElementById('testResult').textContent = '';
+  document.getElementById('settingsModal').style.display = 'flex';
+}
+
+function closeSettings(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('settingsModal').style.display = 'none';
+}
+
+function saveSettings() {
+  const cfg = {
+    provider: document.getElementById('selProvider').value,
+    baseUrl: document.getElementById('inputBaseUrl').value.trim(),
+    apiKey: document.getElementById('inputApiKey').value.trim(),
+    modelName: document.getElementById('inputModel').value.trim(),
+  };
+  localStorage.setItem(STORE_KEY, JSON.stringify(cfg));
+  closeSettings();
+  showToast('✅ 配置已保存！');
+}
+
+async function testConnection() {
+  const resultEl = document.getElementById('testResult');
+  resultEl.textContent = '⏳ 测试中...';
+  resultEl.className = 'test-result show';
+  resultEl.style.color = '#999';
+  const cfg = {
+    provider: document.getElementById('selProvider').value,
+    baseUrl: document.getElementById('inputBaseUrl').value.trim(),
+    apiKey: document.getElementById('inputApiKey').value.trim(),
+    modelName: document.getElementById('inputModel').value.trim(),
+  };
+  const provider = PROVIDERS.find(p => p.id === cfg.provider) || PROVIDERS[0];
+  try {
+    const base = (cfg.baseUrl || '').replace(/\/$/, '') || provider.defaultBase;
+    const model = cfg.modelName || provider.defaultModel;
+    const res = await fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.apiKey}` },
+      body: JSON.stringify({ model, max_tokens:30, messages:[{role:'user', content:'回复"连接成功"四个字'}] }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content || '';
+    resultEl.textContent = `✅ 连接成功！回复：${reply.slice(0,60)}`;
+    resultEl.style.color = '#44ff88';
+  } catch(e) {
+    resultEl.textContent = `❌ 连接失败：${e.message}`;
+    resultEl.style.color = '#ff4422';
+  }
+}
+
+function showToast(msg) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.style.cssText = 'position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:9999;background:rgba(10,6,8,0.92);border:1px solid #3a2418;color:#fff8e8;padding:10px 20px;border-radius:10px;font-size:14px;font-family:Noto Sans SC,sans-serif;backdrop-filter:blur(8px);transition:opacity .3s;pointer-events:none';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+}
+
+/* ══ AI GENERATION ══ */
+async function generateWithAI(symbols) {
+  const cfg = loadConfig();
+  if (!cfg.apiKey) return null;
+
+  const [s0, s1, s2] = symbols;
+  const prompt = `你是一个美食占卜师。根据老虎机抽出的 3 个符号，生成今日推荐菜品。
+
+符号1（主食）：${s0}
+符号2（配菜）：${s1}
+符号3（酱料/做法）：${s2}
+
+用 JSON 格式回复（不要 markdown 包裹），字段：
+- "level": 表情 + 标题，如 "🍜 嗦面快乐 · 汤面日"
+- "levelClass": "level-rice" / "level-noodle" / "level-western" / "level-asian" / "level-japanese" / "level-fusion" / "level-light" / "level-heavy" / "level-special"
+- "text": 一句今日推荐菜品描述（中文，生动有趣）
+- "tip": 一句饮食建议（中文，实用幽默）
+- "win": true 或 false（三连时 true）`;
+
+  const provider = PROVIDERS.find(p => p.id === cfg.provider) || PROVIDERS[0];
+  const base = (cfg.baseUrl || '').replace(/\/$/, '') || provider.defaultBase;
+  const model = cfg.modelName || provider.defaultModel;
+
+  try {
+    const resp = await fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cfg.apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.9,
+        max_tokens: 300,
+      }),
+    });
+    if (!resp.ok) throw new Error(`API ${resp.status}`);
+    const data = await resp.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in response');
+    return JSON.parse(jsonMatch[0]);
+  } catch (e) {
+    console.warn('AI enhanced reading unavailable, using local result', e);
+    return null;
+  }
+}
+
+/* ══ ITEM HEIGHT HELPER ══ */
+function getItemHeight() {
+  const el = document.querySelector('.reel-item');
+  return el ? el.offsetHeight : 130;
+}
+
+/* ══ STATE ══ */
+let spinning = false;
+let spinCount = 0;
+let winCount = 0;
+let lightInterval = null;
+let finalSymbols = ['','',''];
+
+/* ══ INIT REELS ══ */
+function initReels() {
+  for (let i = 0; i < 3; i++) {
+    const reel = document.getElementById('r' + i);
+    reel.innerHTML = '';
+    const symbols = [...REELS[i],...REELS[i],...REELS[i]];
+    symbols.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'reel-item';
+      const span = document.createElement('span');
+      span.textContent = s;
+      div.appendChild(span);
+      reel.appendChild(div);
+    });
+    const startIdx = Math.floor(Math.random() * REELS[i].length);
+    const ih = getItemHeight();
+    reel.style.transform = `translateY(-${startIdx * ih}px)`;
+  }
+}
+
+/* ══ LIGHTS ══ */
+function startLights(fast = false) {
+  if (lightInterval) clearInterval(lightInterval);
+  const bulbs = document.querySelectorAll('.bulb');
+  let offset = 0;
+  const cols = ['on-r','on-y','on-g'];
+  lightInterval = setInterval(() => {
+    bulbs.forEach((b, i) => {
+      b.className = 'bulb';
+      const c = b.dataset.c;
+      if ((i + offset) % 3 === 0) b.classList.add(c === 'r' ? 'on-r' : c === 'y' ? 'on-y' : 'on-g');
+    });
+    offset++;
+  }, fast ? 80 : 220);
+}
+
+function stopLights(win = false) {
+  if (lightInterval) clearInterval(lightInterval);
+  const bulbs = document.querySelectorAll('.bulb');
+  if (win) {
+    let f = false;
+    lightInterval = setInterval(() => {
+      bulbs.forEach(b => {
+        b.className = 'bulb';
+        if (f) b.classList.add(b.dataset.c === 'r' ? 'on-r' : b.dataset.c === 'y' ? 'on-y' : 'on-g');
+      });
+      f = !f;
+    }, 120);
+    setTimeout(() => {
+      clearInterval(lightInterval);
+      lightInterval = null;
+      bulbs.forEach(b => b.className = 'bulb');
+    }, 2400);
+  } else {
+    bulbs.forEach(b => b.className = 'bulb');
+  }
+}
+
+/* ══ SPIN LOGIC ══ */
+function handleSpin() {
+  if (spinning) return;
+  spinning = true;
+
+  const spinBtn = document.getElementById('spinBtn');
+  const leverKnob = document.getElementById('leverKnob');
+  spinBtn.disabled = true;
+  spinBtn.classList.add('pressed');
+  leverKnob.classList.add('spin-active');
+
+  if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+
+  sfxLever();
+  setTimeout(sfxLeverReturn, 280);
+  setTimeout(sfxReelStart, 120);
+
+  document.getElementById('resultIdle').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'none';
+  document.getElementById('resultBoard').classList.remove('winning');
+
+  startLights(true);
+
+  const finalIdx = [0,1,2].map(i => Math.floor(Math.random() * REELS[i].length));
+  finalSymbols = finalIdx.map((idx, i) => REELS[i][idx]);
+
+  const REELCOUNT = 30;
+  const reelWraps = [0,1,2].map(i => document.getElementById('reel' + i));
+  const reels = [0,1,2].map(i => document.getElementById('r' + i));
+
+  reelWraps.forEach(w => w.classList.add('spinning'));
+
+  const stopDelays = [900, 1300, 1700];
+
+  reels.forEach((reel, i) => {
+    const ih = getItemHeight();
+    let currentY = parseFloat(reel.style.transform.replace('translateY(', '').replace('px)', '')) || 0;
+
+    reel.style.transition = `transform ${stopDelays[i]}ms cubic-bezier(0.25, 0.1, 0.25, 1)`;
+    const bigSpin = currentY - (REELCOUNT + finalIdx[i]) * ih;
+    reel.style.transform = `translateY(${bigSpin}px)`;
+
+    setTimeout(() => {
+      reelWraps[i].classList.remove('spinning');
+      reelWraps[i].classList.add('stopping');
+      reel.style.transition = 'none';
+      const snapY = -(finalIdx[i] * ih);
+      reel.style.transform = `translateY(${snapY}px)`;
+      setTimeout(() => reelWraps[i].classList.remove('stopping'), 100);
+
+      sfxReelLock(i);
+      if (i === 2) sfxReelStop();
+
+      if (i === 2) {
+        finishSpin();
+      }
+    }, stopDelays[i]);
+  });
+}
+
+function finishSpin() {
+  spinCount++;
+  document.getElementById('creditVal').textContent = String(spinCount).padStart(2,'0');
+
+  const result = calcResult(finalSymbols);
+
+  if (result.win) {
+    winCount++;
+    document.getElementById('winVal').textContent = String(winCount).padStart(2,'0');
+    document.getElementById('resultBoard').classList.add('winning');
+    burstCoins();
+    stopLights(true);
+    if (navigator.vibrate) navigator.vibrate([50,30,50,30,100]);
+    setTimeout(sfxJackpot, 100);
+  } else {
+    stopLights(false);
+    setTimeout(sfxResultNormal, 80);
+  }
+
+  const levelEl = document.getElementById('resultLevel');
+  const textEl = document.getElementById('resultText');
+  const tipEl = document.getElementById('resultTip');
+
+  levelEl.textContent = result.level;
+  levelEl.className = 'result-level ' + result.levelClass;
+  if (result.win) levelEl.classList.add('glow');
+
+  const tIdx = Math.floor(Math.random() * result.texts.length);
+  const pIdx = Math.floor(Math.random() * result.tips.length);
+  textEl.textContent = result.texts[tIdx];
+  tipEl.textContent = result.tips[pIdx];
+
+  document.getElementById('resultContent').style.display = 'block';
+
+  const spinBtn = document.getElementById('spinBtn');
+  const leverKnob = document.getElementById('leverKnob');
+  spinBtn.classList.remove('pressed');
+  spinBtn.disabled = false;
+  leverKnob.classList.remove('spin-active');
+
+  setTimeout(() => {
+    spinning = false;
+  }, 300);
+
+  // ══ AI enhanced reading (non-blocking) ══
+  generateWithAI(finalSymbols).then(aiResult => {
+    if (!aiResult) return;
+    const lv = document.getElementById('resultLevel');
+    const tx = document.getElementById('resultText');
+    const tp = document.getElementById('resultTip');
+    const rb = document.getElementById('resultBoard');
+    if (aiResult.level) lv.textContent = aiResult.level;
+    if (aiResult.levelClass) lv.className = 'result-level ' + aiResult.levelClass;
+    if (aiResult.text) tx.textContent = aiResult.text;
+    if (aiResult.tip) tp.textContent = aiResult.tip;
+    if (aiResult.win) rb.classList.add('winning');
+    if (aiResult.levelClass === 'level-special') lv.classList.add('glow');
+  });
+}
+
+/* ══ RESULT CALCULATION ══ */
+function calcResult(syms) {
+  const [s0, s1, s2] = syms;
+
+  // special: all same
+  if (s0 === s1 && s1 === s2) return RESULTS.special;
+
+  const sv = STAPLE_VIBE[s0] || 'western';
+  const sv2 = SIDE_VIBE[s1] || 'fresh';
+  const sv3 = SAUCE_VIBE[s2] || 'savory';
+
+  const asianCount = ['rice','noodle','chinese','japanese'].filter(v=>v===sv).length;
+  const westernCount = ['western'].filter(v=>v===sv).length;
+  const lightCount = ['fresh','healthy','light'].filter(v=>v===sv2||v===sv3).length;
+  const heavyCount = ['indulgent','buttery','rich','spicy'].filter(v=>v===sv2||v===sv3).length;
+  const proteinCount = ['protein','crunchy'].filter(v=>v===sv2).length;
+  const sweetCount = ['sweet','sour'].filter(v=>v===sv2||v===sv3).length;
+
+  // asian + light
+  if (asianCount && lightCount >= 2) {
+    // asian base, light sides
+    if (sv === 'japanese') return RESULTS.japanese_meal;
+    if (sv === 'noodle') return RESULTS.noodle_meal;
+    return RESULTS.light_meal;
+  }
+
+  // asian + protein/hearty
+  if (asianCount && proteinCount) {
+    if (sv === 'japanese') return RESULTS.japanese_meal;
+    if (sv === 'noodle') return RESULTS.noodle_meal;
+    return RESULTS.asian_meal;
+  }
+
+  // western
+  if (westernCount) {
+    if (heavyCount >= 2) return RESULTS.heavy_meal;
+    if (lightCount >= 2) return RESULTS.light_meal;
+    return RESULTS.western_meal;
+  }
+
+  // sweet/sour
+  if (sweetCount >= 2) return RESULTS.fusion_meal;
+
+  // rice based
+  if (sv === 'rice') {
+    if (lightCount) return RESULTS.rice_meal;
+    return RESULTS.asian_meal;
+  }
+
+  // noodle
+  if (sv === 'noodle') return RESULTS.noodle_meal;
+
+  // chinese
+  if (sv === 'chinese') return RESULTS.asian_meal;
+
+  // japanese
+  if (sv === 'japanese') return RESULTS.japanese_meal;
+
+  // heavy combo
+  if (heavyCount >= 2) return RESULTS.heavy_meal;
+
+  // fusion
+  if (sv === 'western' && asianCount === 0) return RESULTS.fusion_meal;
+
+  // fallback
+  return RESULTS.fusion_meal;
+}
+
+/* ══ COIN BURST ══ */
+function burstCoins() {
+  const icons = ['🍳','🥘','🍜','🍕','🌮','🍣'];
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  for (let i = 0; i < 18; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'coin';
+      el.textContent = icons[Math.floor(Math.random()*icons.length)];
+      const angle = (Math.random() * Math.PI * 2);
+      const dist = 150 + Math.random() * 200;
+      el.style.setProperty('--tx', Math.cos(angle)*dist + 'px');
+      el.style.setProperty('--ty', Math.sin(angle)*dist - 100 + 'px');
+      el.style.setProperty('--rot', (Math.random()*720-360) + 'deg');
+      el.style.setProperty('--dur', (0.8 + Math.random()*0.8) + 's');
+      el.style.left = cx + 'px';
+      el.style.top = cy + 'px';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1600);
+    }, i * 40);
+  }
+}
+
+/* ══ KEYBOARD ══ */
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'Enter') {
+    e.preventDefault();
+    handleSpin();
+  }
+});
+
+/* ══ BOOT ══ */
+initReels();
+startLights(false);
+</script>
+<div class="bg-particles">
+  <span></span><span></span><span></span><span></span><span></span>
+  <span></span><span></span><span></span><span></span><span></span>
+</div>
+
+<div class="page-footer">
+  <span class="footer-line">╔═══════════════════════════════════╗</span>
+  <span class="footer-line">║ CYBER-CAFETERIA™ v2025  ·  KITCHEN ONLINE ║</span>
+  <span class="footer-line">╚═══════════════════════════════════╝</span>
+  <span class="footer-line">© DAILY SPECIAL · FRESH & HOT · BON APPÉTIT</span>
+</div>
+
+</body>
+</html>
